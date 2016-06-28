@@ -4,19 +4,24 @@ require('../../../TestHelper');
 
 /* global bootstrapModeler, inject */
 
+var canvasEvent = require('../../../util/MockEvents').createCanvasEvent;
 
-var modelingModule = require('../../../../lib/features/modeling'),
-    coreModule = require('../../../../lib/core');
+var modelingModule = require('lib/features/modeling'),
+    coreModule = require('lib/core'),
+    moveModule = require('diagram-js/lib/features/move');
 
 
 describe('features/modeling - move shape', function() {
 
   var diagramXML = require('../../../fixtures/bpmn/simple.bpmn');
 
-  var testModules = [ coreModule, modelingModule ];
+  var testModules = [ coreModule, modelingModule, moveModule ];
 
   beforeEach(bootstrapModeler(diagramXML, { modules: testModules }));
 
+  // beforeEach(inject(function(canvas, dragging) {
+  //   dragging.setOptions({ manual: true });
+  // }));
 
   describe('shape', function() {
 
@@ -55,6 +60,48 @@ describe('features/modeling - move shape', function() {
       expect(sequenceFlow.di.waypoint).to.eql(expectedDiWaypoints);
     }));
 
+    it.only('should move and preserve definition', inject(function(canvas, elementRegistry, modeling, bpmnFactory, bpmnReplace, move, dragging) {
+
+      // given
+      var endEventElement = elementRegistry.get('EndEvent_1');
+
+      console.log(endEventElement);
+
+      var newElementData = {
+        type: 'bpmn:EndEvent',
+        eventDefinitionType: 'bpmn:CancelEventDefinition'
+      };
+
+      var newElement = bpmnReplace.replaceElement(endEventElement, newElementData);
+
+
+      console.log(newElement);
+
+      // when
+      // modeling.moveShape(newElement, { x: 100, y: 0 });
+      // move.start(canvasEvent({ x: 0, y: 0 }, newElement));
+
+
+      var e = canvasEvent({ x: 660, y: 220 });
+
+      dragging.init(e, newElement, 'shape.move', {
+        cursor: 'grabbing',
+        autoActivate: false,
+        data: {
+          shape: newElement,
+          context: {}
+        }
+      });
+
+      // dragging.hover({
+      //   element: newElement,
+      //   gfx: canvas.getGraphics(newElement)
+      // });
+
+      dragging.move(canvasEvent({ x: 100, y: 0 }));
+      dragging.end();
+
+    }));
 
     it('should move label', inject(function(elementRegistry, modeling) {
 
@@ -98,6 +145,8 @@ describe('features/modeling - move shape', function() {
       expect(startEventElement.parent).to.eql(subProcessElement);
       expect(startEvent.$parent).to.eql(subProcess);
     }));
+
+
 
 
     describe('undo support', function() {
